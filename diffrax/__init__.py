@@ -87,6 +87,8 @@ from ._solver import (
     Sil3 as Sil3,
     StratonovichMilstein as StratonovichMilstein,
     Tsit5 as Tsit5,
+    RoWa3 as RoWa3,
+    GRKT4 as GRKT4,
 )
 from ._step_size_controller import (
     AbstractAdaptiveStepSizeController as AbstractAdaptiveStepSizeController,
