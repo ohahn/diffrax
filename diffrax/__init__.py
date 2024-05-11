@@ -89,6 +89,7 @@ from ._solver import (
     Tsit5 as Tsit5,
     RoWa3 as RoWa3,
     GRKT4 as GRKT4,
+    Rodas5 as Rodas5,
 )
 from ._step_size_controller import (
     AbstractAdaptiveStepSizeController as AbstractAdaptiveStepSizeController,

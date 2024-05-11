@@ -43,3 +43,4 @@ from .sil3 import Sil3 as Sil3
 from .tsit5 import Tsit5 as Tsit5
 from .rowa3 import RoWa3 as RoWa3
 from .grkt4 import GRKT4 as GRKT4
+from .rodas5 import Rodas5 as Rodas5
