@@ -21,7 +21,8 @@ _SolverState: TypeAlias = None
 class GRKT4(AbstractAdaptiveSolver):
   r""" Generalized linearly implicit Rosenbrock-Wanner method of order 4 with embedded 3rd order error control.
 
-  Method is the 'GRK4T' method from Kaps & Rentrop (1979), retrievable from http://numerik.mi.fu-berlin.de/wiki/WS_2021/NumericsII_Dokumente/Kaps-Rentrop1979_Article_GeneralizedRunge-KuttaMethodsO.pdf
+  Method is the 'GRK4A/T' method from Kaps & Rentrop (1979), retrievable from http://numerik.mi.fu-berlin.de/wiki/WS_2021/NumericsII_Dokumente/Kaps-Rentrop1979_Article_GeneralizedRunge-KuttaMethodsO.pdf
+  original article: https://link.springer.com/article/10.1007/BF01396495
 
   """
 
@@ -68,17 +69,32 @@ class GRKT4(AbstractAdaptiveSolver):
     ) -> tuple[Y, Y, DenseInfo, _SolverState, RESULTS]:
         # del made_jump
         control = terms.contr(t0, t1)
-        
-        gamma   = 0.231
-        gamma21 = -0.270629667752
-        gamma31 = 0.311254483294; gamma32 = 0.00852445628482
-        gamma41 = 0.282816832044; gamma42 = -0.457959483281; gamma43 =-0.111208333333
 
-        alpha21 = 0.462
-        alpha31 = -0.0815668168327; alpha32 = 0.961775150166
-        #alpha41 = alpha31; alpha42 = alpha32; alpha43 = 0.0 # not needed since duplicate coefficients
-        chat1   = -0.717088504499; chat2 = 1.77617912176; chat3 = -0.0590906172617
-        c1      = 0.217487371653; c2 = 0.486229037990; c3 = 0.; c4 = 0.296283590357
+        if True:
+          #GRK4A variant
+          gamma = 0.395
+          gamma21 = -0.767672395484
+          gamma31 = -0.851675323742; gamma32 = 0.522967289188
+          gamma41 = 0.288463109545;  gamma42 = 0.880214273381e-1; gamma43 = -0.337389840627
+          
+          alpha21 = 0.438
+          alpha31 = 0.796920457938; alpha32 = 0.730795420615e-1
+
+          chat1 = 0.346325833758; chat2 = 0.285693175712; chat3 = 0.367980990530
+          c1 = 0.199293275701; c2 = 0.482645235674; c3 = 0.680614886256e-1; c4 = 0.25
+
+        else:
+          #GRK4T variant
+          gamma   = 0.231
+          gamma21 = -0.270629667752
+          gamma31 = 0.311254483294; gamma32 = 0.00852445628482
+          gamma41 = 0.282816832044; gamma42 = -0.457959483281; gamma43 =-0.111208333333
+
+          alpha21 = 0.462
+          alpha31 = -0.0815668168327; alpha32 = 0.961775150166
+          #alpha41 = alpha31; alpha42 = alpha32; alpha43 = 0.0 # not needed since duplicate coefficients
+          chat1   = -0.717088504499; chat2 = 1.77617912176; chat3 = -0.0590906172617
+          c1      = 0.217487371653; c2 = 0.486229037990; c3 = 0.; c4 = 0.296283590357
 
         # Jacobian for all stages
         J = lx.JacobianLinearOperator(lambda y,arg : terms.vf_prod(t0, y, arg, control), y0, args)
@@ -107,17 +123,17 @@ class GRKT4(AbstractAdaptiveSolver):
         f2 = terms.vf_prod(t2, y2, args, control)
         Jk2 = J.mv(k2)
         b3 = (f2**ω + gamma31 * Jk1**ω + gamma32 * Jk2**ω).ω
-        k3 = jax.scipy.linalg.lu_solve( LU_and_piv, b3 )
+        k3 = jax.scipy.linalg.lu_solve( LU_and_piv, b3 ) 
         
         # Stage 4
-        t3, y3 = t2, y2
+        # t3, y3 = t2, y2
         f3 = f2
         Jk3 = J.mv(k3)
         b4 = (f3**ω + gamma41 * Jk1**ω + gamma42 * Jk2**ω + gamma43 * Jk3**ω).ω
         k4 = jax.scipy.linalg.lu_solve( LU_and_piv, b4 )
         
         # Advance Solution
-        y1 = (y0**ω + c1 * k1**ω + c2 * k2**ω + c4 * k4**ω).ω
+        y1 = (y0**ω + c1 * k1**ω + c2 * k2**ω + c3 * k3**ω + c4 * k4**ω).ω
         y_error = ((c1-chat1)*k1**ω + (c2-chat2)*k2**ω + (c3-chat3)*k3**ω + (c4-0.0)*k4**ω).ω
 
         dense_info = dict(y0=y0, y1=y1)
